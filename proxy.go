@@ -82,8 +82,19 @@ func (ph ProxyHandler) handleConnect(w http.ResponseWriter, req *http.Request) {
 		server, err = connectViaProxy(req, proxy, ph.auth)
 		var oe *net.OpError
 		if errors.As(err, &oe) && oe.Op == "proxyconnect" {
-			log.Printf("[%d] Temporarily blocking proxy: %q", id, proxy.Host)
-			ph.block(proxy.Host)
+			log.Printf("[%d] proxyconnect retry error Temporarily blocking proxy: %q", id, proxy.Host)
+			//ph.block(proxy.Host)
+			server, err = connectViaProxy(req, proxy, ph.auth)
+
+		}
+		if errors.As(err, &oe) && oe.Op == "proxyconnect" {
+			log.Printf("[%d] proxyconnect 2 retry error Temporarily blocking proxy: %q", id, proxy.Host)
+			//ph.block(proxy.Host)
+			server, err = connectViaProxy(req, proxy, ph.auth)
+		}
+		if errors.As(err, &oe) && oe.Op == "proxyconnect" {
+			log.Printf("[%d] proxyconnect 3 end error Temporarily blocking proxy: %q", id, proxy.Host)
+			//ph.block(proxy.Host)
 		}
 	}
 	if err != nil {
@@ -195,11 +206,11 @@ func (ph ProxyHandler) proxyRequest(w http.ResponseWriter, req *http.Request, au
 		if errors.As(err, &oe) && oe.Op == "proxyconnect" {
 			proxy, err := ph.transport.Proxy(req)
 			if err != nil {
-				log.Printf("[%d] Proxy connect error to unknown proxy: %v", id, err)
+				log.Printf("[%d] retry 1 Proxy connect error to unknown proxy: %v", id, err)
 				return
 			}
-			log.Printf("[%d] Temporarily blocking proxy: %q", id, proxy.Host)
-			ph.block(proxy.Host)
+			log.Printf("[%d] not Temporarily blocking proxy: %q", id, proxy.Host)
+			//ph.block(proxy.Host)
 		}
 		return
 	}
